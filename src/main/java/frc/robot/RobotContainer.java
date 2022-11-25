@@ -6,11 +6,13 @@ package frc.robot;
 
 import java.util.function.DoubleSupplier;
 
+import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
+import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.CounterBase.EncodingType;
 import edu.wpi.first.wpilibj.motorcontrol.Talon;
@@ -21,6 +23,7 @@ import edu.wpi.first.wpilibj2.command.button.Button;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Shifter;
+import frc.robot.subsystems.SmartCompressor;
 import frc.robot.subsystems.Shifter.Gear;
 
 /**
@@ -57,6 +60,11 @@ public class RobotContainer {
 
         var shiftToggle = new Button(dtRightJoy::getTrigger);
 
+        var pdp = new PowerDistribution();
+
+        var compressor = new SmartCompressor(
+                new Compressor(PneumaticsModuleType.CTREPCM));
+
         var dt = new Drivetrain(
                 newTalon(
                         Constants.Drivetrain.Ports.TALON_LEFT,
@@ -82,6 +90,11 @@ public class RobotContainer {
                         PneumaticsModuleType.CTREPCM,
                         Constants.Shifter.Ports.HIGH,
                         Constants.Shifter.Ports.LOW));
+
+        compressor.setDefaultCommand(new RunCommand(() -> {
+            compressor.set(
+                    pdp.getVoltage() > Constants.Compressor.Control.MIN_RUN_VOLTAGE);
+        }, compressor));
 
         dt.setDefaultCommand(new RunCommand(
                 () -> dt.set(
