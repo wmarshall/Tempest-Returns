@@ -20,9 +20,15 @@ import edu.wpi.first.math.util.Units;
  */
 public final class Constants {
 
+    public static final class Compressor {
+        public static final class Control {
+            public static final double MIN_RUN_VOLTAGE = 10;
+        }
+    }
+
     public static final class Drivetrain {
         public static final class Ports {
-            
+
             public static final int TALON_LEFT = 1;
             public static final int TALON_RIGHT = 2;
 
@@ -32,7 +38,7 @@ public final class Constants {
             public static final int ENCODER_RIGHT_B = 4;
         }
 
-        public static final class Inverted{
+        public static final class Inverted {
             public static final boolean TALON_LEFT = false;
             public static final boolean TALON_RIGHT = true;
             public static final boolean ENCODER_LEFT = false;
@@ -67,9 +73,11 @@ public final class Constants {
         public static final int POTENTIOMETER_PORT = 1;
     }
 
-    public static class Hardstop {
-        public static final int LOB_SOLENOID = 5;
-        public static final int FULL_SOLENOID = 6;
+    public static class ShotSelector {
+        public static final class Ports {
+            public static final int FULL_SOLENOID = 6;
+            public static final int LOB_SOLENOID = 5;
+        }
     }
 
     public static class Intake {
@@ -83,15 +91,23 @@ public final class Constants {
         public static class Ports {
             public static final int DT_LEFT_JOY = 1;
             public static final int DT_RIGHT_JOY = 2;
-        public static final int EE_JOY = 3;
-    }
+            public static final int EE_JOY = 3;
+        }
+
         public static class Inverted {
             public static final boolean DT_LEFT_Y = true;
             public static final boolean DT_RIGHT_Y = true;
         }
-        public static class Buttons {
-            public static final int EE_SHOOT_BUTTON = 1;
 
+        public static class Buttons {
+            public static final int SHOOT = 1;
+            public static final int SELECT_STANDARD_SHOT = 10;
+            public static final int SELECT_LOB_SHOT = 12;
+
+        }
+
+        public static class Deadbands {
+            public static double JOYSTICK_Y = 0.05;
         }
     }
 

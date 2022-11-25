@@ -23,8 +23,10 @@ import edu.wpi.first.wpilibj2.command.button.Button;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Shifter;
+import frc.robot.subsystems.ShotSelector;
 import frc.robot.subsystems.SmartCompressor;
 import frc.robot.subsystems.Shifter.Gear;
+import frc.robot.subsystems.ShotSelector.Shot;
 
 /**
  * This class is where the bulk of the robot should be declared. Since
@@ -59,6 +61,8 @@ public class RobotContainer {
                         dtRightJoy.getY()));
 
         var shiftToggle = new Button(dtRightJoy::getTrigger);
+        var selectFullShot = new JoystickButton(eeJoy, Constants.OI.Buttons.SELECT_FULL_SHOT);
+        var selectLobShot = new JoystickButton(eeJoy, Constants.OI.Buttons.SELECT_LOB_SHOT);
 
         var pdp = new PowerDistribution();
 
@@ -91,6 +95,13 @@ public class RobotContainer {
                         Constants.Shifter.Ports.HIGH,
                         Constants.Shifter.Ports.LOW));
 
+        var shotSelector = new ShotSelector(
+                new DoubleSolenoid(
+                        PneumaticsModuleType.CTREPCM,
+                        Constants.ShotSelector.Ports.FULL_SOLENOID,
+                        Constants.ShotSelector.Ports.LOB_SOLENOID));
+
+        // Configure default states
         compressor.setDefaultCommand(new RunCommand(() -> {
             compressor.set(
                     pdp.getVoltage() > Constants.Compressor.Control.MIN_RUN_VOLTAGE);
@@ -110,6 +121,13 @@ public class RobotContainer {
             }
         }, shifter));
 
+        selectFullShot.whenPressed(new InstantCommand(
+                () -> shotSelector.set(Shot.FULL),
+                shotSelector));
+
+        selectLobShot.whenPressed(new InstantCommand(
+                () -> shotSelector.set(Shot.LOB),
+                shotSelector));
     }
 
     public static Talon newTalon(int port, boolean invert) {
