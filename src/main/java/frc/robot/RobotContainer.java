@@ -15,16 +15,21 @@ import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.CounterBase.EncodingType;
+import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.motorcontrol.Talon;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
+import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.button.Button;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.subsystems.Drivetrain;
+import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Shifter;
 import frc.robot.subsystems.ShotSelector;
 import frc.robot.subsystems.SmartCompressor;
+import frc.robot.subsystems.Intake.Direction;
+import frc.robot.subsystems.Intake.State;
 import frc.robot.subsystems.Shifter.Gear;
 import frc.robot.subsystems.ShotSelector.Shot;
 
@@ -60,9 +65,12 @@ public class RobotContainer {
                         Constants.OI.Deadbands.JOYSTICK_Y,
                         dtRightJoy.getY()));
 
-        var shiftToggle = new Button(dtRightJoy::getTrigger);
+        var shiftToggle = new JoystickButton(dtRightJoy, Constants.OI.Buttons.SHIFT);
         var selectFullShot = new JoystickButton(eeJoy, Constants.OI.Buttons.SELECT_FULL_SHOT);
         var selectLobShot = new JoystickButton(eeJoy, Constants.OI.Buttons.SELECT_LOB_SHOT);
+        var load = new JoystickButton(eeJoy, Constants.OI.Buttons.LOAD);
+        var unload = new JoystickButton(eeJoy, Constants.OI.Buttons.UNLOAD);
+        var intakeExtendToggle = new JoystickButton(eeJoy, Constants.OI.Buttons.EXTEND_TOGGLE);
 
         var pdp = new PowerDistribution();
 
@@ -101,6 +109,19 @@ public class RobotContainer {
                         Constants.ShotSelector.Ports.FULL_SOLENOID,
                         Constants.ShotSelector.Ports.LOB_SOLENOID));
 
+        var intake = new Intake(
+                new DoubleSolenoid(
+                        PneumaticsModuleType.CTREPCM,
+                        Constants.Intake.Ports.OUT_SOLENOID,
+                        Constants.Intake.Ports.IN_SOLENOID),
+                new MotorControllerGroup(
+                        newTalon(
+                                Constants.Intake.Ports.TALON1,
+                                Constants.Intake.Inverted.TALON1),
+                        newTalon(
+                                Constants.Intake.Ports.TALON2,
+                                Constants.Intake.Inverted.TALON2)));
+
         // Configure default states
         compressor.setDefaultCommand(new RunCommand(() -> {
             compressor.set(
@@ -112,6 +133,12 @@ public class RobotContainer {
                         dtLeftPercent.getAsDouble(),
                         dtRightPercent.getAsDouble()),
                 dt));
+
+        intake.setDefaultCommand(new StartEndCommand(
+                () -> intake.roll(Direction.IN, 0),
+                () -> {
+                },
+                intake));
 
         shiftToggle.whenPressed(new InstantCommand(() -> {
             if (shifter.getGear() == Gear.HIGH) {
@@ -128,6 +155,22 @@ public class RobotContainer {
         selectLobShot.whenPressed(new InstantCommand(
                 () -> shotSelector.set(Shot.LOB),
                 shotSelector));
+
+        load.whileHeld(new RunCommand(
+                () -> intake.roll(Direction.IN, 1),
+                intake));
+        unload.whileHeld(new RunCommand(
+                () -> intake.roll(Direction.OUT, 1),
+                intake));
+        intakeExtendToggle.whenPressed(new InstantCommand(
+            () -> {
+                if (intake.getState() == State.OUT) {
+                    intake.setState(State.IN);
+                } else {
+                    intake.setState(State.OUT);
+                }
+            }, 
+        intake));
     }
 
     public static Talon newTalon(int port, boolean invert) {

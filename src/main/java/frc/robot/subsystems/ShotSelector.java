@@ -32,7 +32,7 @@ public class ShotSelector implements Subsystem {
         this.selector.set(this.currentShot.solenoidValue);
     }
 
-    public Shot getCurrentShot() {
+    public Shot getShot() {
         return currentShot;
     }
 

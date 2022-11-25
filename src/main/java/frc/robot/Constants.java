@@ -81,10 +81,17 @@ public final class Constants {
     }
 
     public static class Intake {
-        public static final int TALON1 = 4;
-        public static final int TALON2 = 5;
-        public static final int INTAKE_IN_SOLENOID_PORT = 3;
-        public static final int INTAKE_OUT_SOLENOID_PORT = 4;
+        public static class Ports {
+            public static final int TALON1 = 4;
+            public static final int TALON2 = 5;
+            public static final int OUT_SOLENOID = 4;
+            public static final int IN_SOLENOID = 3;
+        }
+
+        public static class Inverted {
+            public static final boolean TALON1 = false;
+            public static final boolean TALON2 = true;
+        }
     }
 
     public static class OI {
@@ -100,9 +107,14 @@ public final class Constants {
         }
 
         public static class Buttons {
+            public static final int SHIFT = 1;
+
             public static final int SHOOT = 1;
-            public static final int SELECT_STANDARD_SHOT = 10;
+            public static final int SELECT_FULL_SHOT = 10;
             public static final int SELECT_LOB_SHOT = 12;
+            public static final int LOAD = 5;
+            public static final int UNLOAD = 3;
+            public static final int EXTEND_TOGGLE = 7;
 
         }
 
