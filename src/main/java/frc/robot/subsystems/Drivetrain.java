@@ -19,6 +19,8 @@ public class Drivetrain implements Subsystem {
         this.rightEnc = rightEnc;
 
         drive = new DifferentialDrive(left, right);
+        // deadbanding is managed at the OI layer, not here
+        drive.setDeadband(0);
     }
 
     public void set(double l, double r) {
@@ -26,7 +28,8 @@ public class Drivetrain implements Subsystem {
         r = MathUtil.clamp(r, -1, 1);
 
         // Input scaling is managed at the OI layer, not here
-        drive.tankDrive(l, r, false);
+        var squareInputs = false;
+        drive.tankDrive(l, r, squareInputs);
     }
 
     public double getLeftDistanceFeet() {

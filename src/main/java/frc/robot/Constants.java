@@ -69,8 +69,20 @@ public final class Constants {
     }
 
     public static class Catapult {
-        public static final int TALON = 3;
-        public static final int POTENTIOMETER_PORT = 1;
+        public static class Ports {
+            public static final int TALON = 3;
+            public static final int POTENTIOMETER = 1;
+        }
+
+        public static class Inverted {
+            public static final boolean TALON = true;
+            public static final boolean POTENTIOMETER = false;
+        }
+
+        public static class Kinematics {
+            public static final double POTENTIOMETER_MAX_ANGLE_DEGREES = 360;
+            public static final double POTENTIOMETER_OFFSET_ANGLE_DEGREES = -80; 
+        }
     }
 
     public static class ShotSelector {
@@ -104,6 +116,7 @@ public final class Constants {
         public static class Inverted {
             public static final boolean DT_LEFT_Y = true;
             public static final boolean DT_RIGHT_Y = true;
+            public static final boolean EE_Y = true;
         }
 
         public static class Buttons {

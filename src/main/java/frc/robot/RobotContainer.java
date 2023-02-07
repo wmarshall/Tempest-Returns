@@ -4,8 +4,10 @@
 
 package frc.robot;
 
+import java.util.Map;
 import java.util.function.DoubleSupplier;
 
+import edu.wpi.first.wpilibj.AnalogPotentiometer;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Encoder;
@@ -14,24 +16,25 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.CounterBase.EncodingType;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.motorcontrol.Talon;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
+import edu.wpi.first.wpilibj2.command.SelectCommand;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
-import edu.wpi.first.wpilibj2.command.button.Button;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import frc.robot.subsystems.Catapult;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Intake;
-import frc.robot.subsystems.Shifter;
-import frc.robot.subsystems.ShotSelector;
-import frc.robot.subsystems.SmartCompressor;
 import frc.robot.subsystems.Intake.Direction;
 import frc.robot.subsystems.Intake.State;
+import frc.robot.subsystems.Shifter;
 import frc.robot.subsystems.Shifter.Gear;
+import frc.robot.subsystems.ShotSelector;
 import frc.robot.subsystems.ShotSelector.Shot;
+import frc.robot.subsystems.SmartCompressor;
+import frc.robot.subsystems.Catapult.Mode;
 
 /**
  * This class is where the bulk of the robot should be declared. Since
@@ -43,182 +46,210 @@ import frc.robot.subsystems.ShotSelector.Shot;
  * subsystems, commands, and button mappings) should be declared here.
  */
 public class RobotContainer {
-    // The robot's subsystems and commands are defined here...
-    /**
-     * The container for the robot. Contains subsystems, OI devices, and commands.
-     */
-    public RobotContainer() {
+        // The robot's subsystems and commands are defined here...
+        /**
+         * The container for the robot. Contains subsystems, OI devices, and commands.
+         */
+        public RobotContainer() {
 
-        var dtLeftJoy = new Joystick(Constants.OI.Ports.DT_LEFT_JOY);
-        var dtRightJoy = new Joystick(Constants.OI.Ports.DT_RIGHT_JOY);
-        var eeJoy = new Joystick(Constants.OI.Ports.EE_JOY);
+                var dtLeftJoy = new Joystick(Constants.OI.Ports.DT_LEFT_JOY);
+                var dtRightJoy = new Joystick(Constants.OI.Ports.DT_RIGHT_JOY);
+                var eeJoy = new Joystick(Constants.OI.Ports.EE_JOY);
 
-        // TODO: Slew rate limiting
-        DoubleSupplier dtLeftPercent = () -> invertIf(
-                Constants.OI.Inverted.DT_LEFT_Y,
-                smartDeadband(
-                        Constants.OI.Deadbands.JOYSTICK_Y,
-                        dtLeftJoy.getY()));
-        DoubleSupplier dtRightPercent = () -> invertIf(
-                Constants.OI.Inverted.DT_RIGHT_Y,
-                smartDeadband(
-                        Constants.OI.Deadbands.JOYSTICK_Y,
-                        dtRightJoy.getY()));
+                // TODO: Slew rate limiting
+                DoubleSupplier dtLeftPercent = () -> invertIf(
+                                Constants.OI.Inverted.DT_LEFT_Y,
+                                smartDeadband(
+                                                Constants.OI.Deadbands.JOYSTICK_Y,
+                                                dtLeftJoy.getY()));
+                DoubleSupplier dtRightPercent = () -> invertIf(
+                                Constants.OI.Inverted.DT_RIGHT_Y,
+                                smartDeadband(
+                                                Constants.OI.Deadbands.JOYSTICK_Y,
+                                                dtRightJoy.getY()));
 
-        var shiftToggle = new JoystickButton(dtRightJoy, Constants.OI.Buttons.SHIFT);
-        var selectFullShot = new JoystickButton(eeJoy, Constants.OI.Buttons.SELECT_FULL_SHOT);
-        var selectLobShot = new JoystickButton(eeJoy, Constants.OI.Buttons.SELECT_LOB_SHOT);
-        var load = new JoystickButton(eeJoy, Constants.OI.Buttons.LOAD);
-        var unload = new JoystickButton(eeJoy, Constants.OI.Buttons.UNLOAD);
-        var intakeExtendToggle = new JoystickButton(eeJoy, Constants.OI.Buttons.EXTEND_TOGGLE);
+                DoubleSupplier eeYPercent = () -> invertIf(
+                                Constants.OI.Inverted.EE_Y,
+                                smartDeadband(
+                                                Constants.OI.Deadbands.JOYSTICK_Y,
+                                                eeJoy.getY()));
 
-        var pdp = new PowerDistribution();
+                var shiftToggle = new JoystickButton(dtRightJoy, Constants.OI.Buttons.SHIFT);
+                var selectFullShot = new JoystickButton(eeJoy, Constants.OI.Buttons.SELECT_FULL_SHOT);
+                var selectLobShot = new JoystickButton(eeJoy, Constants.OI.Buttons.SELECT_LOB_SHOT);
+                var load = new JoystickButton(eeJoy, Constants.OI.Buttons.LOAD);
+                var unload = new JoystickButton(eeJoy, Constants.OI.Buttons.UNLOAD);
+                var intakeExtendToggle = new JoystickButton(eeJoy, Constants.OI.Buttons.EXTEND_TOGGLE);
 
-        var compressor = new SmartCompressor(
-                new Compressor(PneumaticsModuleType.CTREPCM));
+                var pdp = new PowerDistribution();
 
-        var dt = new Drivetrain(
-                newTalon(
-                        Constants.Drivetrain.Ports.TALON_LEFT,
-                        Constants.Drivetrain.Inverted.TALON_LEFT),
-                newTalon(
-                        Constants.Drivetrain.Ports.TALON_RIGHT,
-                        Constants.Drivetrain.Inverted.TALON_RIGHT),
-                newEncoder(
-                        Constants.Drivetrain.Ports.ENCODER_LEFT_A,
-                        Constants.Drivetrain.Ports.ENCODER_LEFT_B,
-                        Constants.Drivetrain.Inverted.ENCODER_LEFT,
-                        Constants.Drivetrain.Kinematics.DIST_PER_PULSE,
-                        Constants.Drivetrain.Kinematics.ENCODER_SAMPLES),
-                newEncoder(
-                        Constants.Drivetrain.Ports.ENCODER_RIGHT_A,
-                        Constants.Drivetrain.Ports.ENCODER_RIGHT_B,
-                        Constants.Drivetrain.Inverted.ENCODER_RIGHT,
-                        Constants.Drivetrain.Kinematics.DIST_PER_PULSE,
-                        Constants.Drivetrain.Kinematics.ENCODER_SAMPLES));
+                var compressor = new SmartCompressor(
+                                new Compressor(PneumaticsModuleType.CTREPCM));
 
-        var shifter = new Shifter(
-                new DoubleSolenoid(
-                        PneumaticsModuleType.CTREPCM,
-                        Constants.Shifter.Ports.HIGH,
-                        Constants.Shifter.Ports.LOW));
+                var dt = new Drivetrain(
+                                newTalon(
+                                                Constants.Drivetrain.Ports.TALON_LEFT,
+                                                Constants.Drivetrain.Inverted.TALON_LEFT),
+                                newTalon(
+                                                Constants.Drivetrain.Ports.TALON_RIGHT,
+                                                Constants.Drivetrain.Inverted.TALON_RIGHT),
+                                newEncoder(
+                                                Constants.Drivetrain.Ports.ENCODER_LEFT_A,
+                                                Constants.Drivetrain.Ports.ENCODER_LEFT_B,
+                                                Constants.Drivetrain.Inverted.ENCODER_LEFT,
+                                                Constants.Drivetrain.Kinematics.DIST_PER_PULSE,
+                                                Constants.Drivetrain.Kinematics.ENCODER_SAMPLES),
+                                newEncoder(
+                                                Constants.Drivetrain.Ports.ENCODER_RIGHT_A,
+                                                Constants.Drivetrain.Ports.ENCODER_RIGHT_B,
+                                                Constants.Drivetrain.Inverted.ENCODER_RIGHT,
+                                                Constants.Drivetrain.Kinematics.DIST_PER_PULSE,
+                                                Constants.Drivetrain.Kinematics.ENCODER_SAMPLES));
 
-        var shotSelector = new ShotSelector(
-                new DoubleSolenoid(
-                        PneumaticsModuleType.CTREPCM,
-                        Constants.ShotSelector.Ports.FULL_SOLENOID,
-                        Constants.ShotSelector.Ports.LOB_SOLENOID));
+                var shifter = new Shifter(
+                                new DoubleSolenoid(
+                                                PneumaticsModuleType.CTREPCM,
+                                                Constants.Shifter.Ports.HIGH,
+                                                Constants.Shifter.Ports.LOW));
 
-        var intake = new Intake(
-                new DoubleSolenoid(
-                        PneumaticsModuleType.CTREPCM,
-                        Constants.Intake.Ports.OUT_SOLENOID,
-                        Constants.Intake.Ports.IN_SOLENOID),
-                new MotorControllerGroup(
-                        newTalon(
-                                Constants.Intake.Ports.TALON1,
-                                Constants.Intake.Inverted.TALON1),
-                        newTalon(
-                                Constants.Intake.Ports.TALON2,
-                                Constants.Intake.Inverted.TALON2)));
+                var shotSelector = new ShotSelector(
+                                new DoubleSolenoid(
+                                                PneumaticsModuleType.CTREPCM,
+                                                Constants.ShotSelector.Ports.FULL_SOLENOID,
+                                                Constants.ShotSelector.Ports.LOB_SOLENOID));
 
-        // Configure default states
-        compressor.setDefaultCommand(new RunCommand(() -> {
-            compressor.set(
-                    pdp.getVoltage() > Constants.Compressor.Control.MIN_RUN_VOLTAGE);
-        }, compressor));
+                var intake = new Intake(
+                                new DoubleSolenoid(
+                                                PneumaticsModuleType.CTREPCM,
+                                                Constants.Intake.Ports.OUT_SOLENOID,
+                                                Constants.Intake.Ports.IN_SOLENOID),
+                                new MotorControllerGroup(
+                                                newTalon(
+                                                                Constants.Intake.Ports.TALON1,
+                                                                Constants.Intake.Inverted.TALON1),
+                                                newTalon(
+                                                                Constants.Intake.Ports.TALON2,
+                                                                Constants.Intake.Inverted.TALON2)));
 
-        dt.setDefaultCommand(new RunCommand(
-                () -> dt.set(
-                        dtLeftPercent.getAsDouble(),
-                        dtRightPercent.getAsDouble()),
-                dt));
+                var catapult = new Catapult(
+                                newTalon(
+                                                Constants.Catapult.Ports.TALON,
+                                                Constants.Catapult.Inverted.TALON),
+                                new AnalogPotentiometer(
+                                                Constants.Catapult.Ports.POTENTIOMETER,
+                                                Constants.Catapult.Kinematics.POTENTIOMETER_MAX_ANGLE_DEGREES,
+                                                Constants.Catapult.Kinematics.POTENTIOMETER_OFFSET_ANGLE_DEGREES),
+                                Mode.AUTO);
 
-        intake.setDefaultCommand(new StartEndCommand(
-                () -> intake.roll(Direction.IN, 0),
-                () -> {
-                },
-                intake));
+                // Configure default states
+                compressor.setDefaultCommand(new RunCommand(() -> {
+                        compressor.set(
+                                        pdp.getVoltage() > Constants.Compressor.Control.MIN_RUN_VOLTAGE);
+                }, compressor));
 
-        shiftToggle.whenPressed(new InstantCommand(() -> {
-            if (shifter.getGear() == Gear.HIGH) {
-                shifter.set(Gear.LOW);
-            } else {
-                shifter.set(Gear.HIGH);
-            }
-        }, shifter));
+                dt.setDefaultCommand(new RunCommand(
+                                () -> dt.set(
+                                                dtLeftPercent.getAsDouble(),
+                                                dtRightPercent.getAsDouble()),
+                                dt));
 
-        selectFullShot.whenPressed(new InstantCommand(
-                () -> shotSelector.set(Shot.FULL),
-                shotSelector));
+                intake.setDefaultCommand(new StartEndCommand(
+                                () -> intake.roll(Direction.IN, 0),
+                                () -> {
+                                },
+                                intake));
 
-        selectLobShot.whenPressed(new InstantCommand(
-                () -> shotSelector.set(Shot.LOB),
-                shotSelector));
+                catapult.setDefaultCommand(new SelectCommand(
+                                Map.ofEntries(
+                                                Map.entry(Mode.IDLE, new RunCommand(
+                                                                () -> catapult.set(0),
+                                                                catapult)),
+                                                Map.entry(Mode.MANUAL, new RunCommand(
+                                                                () -> catapult.set(eeYPercent.getAsDouble()),
+                                                                catapult))
+                                                // Map.entry(Mode.AUTO, new CatapultPrime())
+                                                ),
+                                catapult::getMode));
 
-        load.whileHeld(new RunCommand(
-                () -> intake.roll(Direction.IN, 1),
-                intake));
-        unload.whileHeld(new RunCommand(
-                () -> intake.roll(Direction.OUT, 1),
-                intake));
-        intakeExtendToggle.whenPressed(new InstantCommand(
-            () -> {
-                if (intake.getState() == State.OUT) {
-                    intake.setState(State.IN);
-                } else {
-                    intake.setState(State.OUT);
-                }
-            }, 
-        intake));
-    }
+                shiftToggle.whenPressed(new InstantCommand(() -> {
+                        if (shifter.getGear() == Gear.HIGH) {
+                                shifter.set(Gear.LOW);
+                        } else {
+                                shifter.set(Gear.HIGH);
+                        }
+                }, shifter));
 
-    public static Talon newTalon(int port, boolean invert) {
-        Talon t = new Talon(port);
-        t.setInverted(invert);
-        t.enableDeadbandElimination(true);
-        return t;
-    }
+                selectFullShot.whenPressed(new InstantCommand(
+                                () -> shotSelector.set(Shot.FULL),
+                                shotSelector));
 
-    public static Encoder newEncoder(int aPort, int bPort, boolean invert, double distancePerPulse,
-            int samplesToAverage) {
-        Encoder e = new Encoder(aPort, bPort, invert);
-        e.setDistancePerPulse(distancePerPulse);
-        e.setSamplesToAverage(samplesToAverage);
-        return e;
-    }
+                selectLobShot.whenPressed(new InstantCommand(
+                                () -> shotSelector.set(Shot.LOB),
+                                shotSelector));
 
-    private static double invertIf(boolean invert, double value) {
-        return (invert ? -1 : 1) * value;
-    }
-
-    private static double smartDeadband(double deadband, double value) {
-        if (Math.abs(value) < deadband) {
-            return 0;
+                load.whileHeld(new RunCommand(
+                                () -> intake.roll(Direction.IN, 1),
+                                intake));
+                unload.whileHeld(new RunCommand(
+                                () -> intake.roll(Direction.OUT, 1),
+                                intake));
+                intakeExtendToggle.whenPressed(new InstantCommand(
+                                () -> {
+                                        if (intake.getState() == State.OUT) {
+                                                intake.setState(State.IN);
+                                        } else {
+                                                intake.setState(State.OUT);
+                                        }
+                                },
+                                intake));
         }
-        return Math.copySign(
-                (Math.abs(value) - deadband) / (1 - deadband),
-                value);
-    }
 
-    /**
-     * Use this method to define your button->command mappings. Buttons can be
-     * created by
-     * instantiating a {@link GenericHID} or one of its subclasses ({@link
-     * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing
-     * it to a {@link
-     * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
-     */
-    private void configureButtonBindings() {
-    }
+        public static Talon newTalon(int port, boolean invert) {
+                Talon t = new Talon(port);
+                t.setInverted(invert);
+                t.enableDeadbandElimination(true);
+                return t;
+        }
 
-    /**
-     * Use this to pass the autonomous command to the main {@link Robot} class.
-     *
-     * @return the command to run in autonomous
-     */
-    public Command getAutonomousCommand() {
-        // An ExampleCommand will run in autonomous
-        return null;
-    }
+        public static Encoder newEncoder(int aPort, int bPort, boolean invert, double distancePerPulse,
+                        int samplesToAverage) {
+                Encoder e = new Encoder(aPort, bPort, invert);
+                e.setDistancePerPulse(distancePerPulse);
+                e.setSamplesToAverage(samplesToAverage);
+                return e;
+        }
+
+        private static double invertIf(boolean invert, double value) {
+                return (invert ? -1 : 1) * value;
+        }
+
+        private static double smartDeadband(double deadband, double value) {
+                if (Math.abs(value) < deadband) {
+                        return 0;
+                }
+                return Math.copySign(
+                                (Math.abs(value) - deadband) / (1 - deadband),
+                                value);
+        }
+
+        /**
+         * Use this method to define your button->command mappings. Buttons can be
+         * created by
+         * instantiating a {@link GenericHID} or one of its subclasses ({@link
+         * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing
+         * it to a {@link
+         * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
+         */
+        private void configureButtonBindings() {
+        }
+
+        /**
+         * Use this to pass the autonomous command to the main {@link Robot} class.
+         *
+         * @return the command to run in autonomous
+         */
+        public Command getAutonomousCommand() {
+                // An ExampleCommand will run in autonomous
+                return null;
+        }
 }
