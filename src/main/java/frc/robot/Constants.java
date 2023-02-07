@@ -21,6 +21,8 @@ import edu.wpi.first.wpilibj.RobotController;
  */
 public final class Constants {
 
+    public static final String PRACTICE_BOT_SERIAL = "Bar";
+
     public static final class Compressor {
         public static final class Control {
             public static final double MIN_RUN_VOLTAGE = 10;
@@ -39,10 +41,10 @@ public final class Constants {
             public static final int ENCODER_RIGHT_B = 4;
 
             static {
-                var serial = "foo";
-                if(serial == "bar"){
+                var serial = RobotController.getSerialNumber();
+                if (serial == PRACTICE_BOT_SERIAL) {
                     TALON_LEFT = 4;
-                }else {
+                } else {
                     TALON_LEFT = 1;
                 }
             }
@@ -91,7 +93,7 @@ public final class Constants {
 
         public static class Kinematics {
             public static final double POTENTIOMETER_MAX_ANGLE_DEGREES = 360;
-            public static final double POTENTIOMETER_OFFSET_ANGLE_DEGREES = -80; 
+            public static final double POTENTIOMETER_OFFSET_ANGLE_DEGREES = -80;
         }
     }
 
