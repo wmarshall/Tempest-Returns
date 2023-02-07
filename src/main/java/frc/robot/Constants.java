@@ -5,6 +5,7 @@
 package frc.robot;
 
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.RobotController;
 
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide
@@ -29,13 +30,22 @@ public final class Constants {
     public static final class Drivetrain {
         public static final class Ports {
 
-            public static final int TALON_LEFT = 1;
+            public static final int TALON_LEFT;
             public static final int TALON_RIGHT = 2;
 
             public static final int ENCODER_LEFT_A = 1;
             public static final int ENCODER_LEFT_B = 2;
             public static final int ENCODER_RIGHT_A = 3;
             public static final int ENCODER_RIGHT_B = 4;
+
+            static {
+                var serial = "foo";
+                if(serial == "bar"){
+                    TALON_LEFT = 4;
+                }else {
+                    TALON_LEFT = 1;
+                }
+            }
         }
 
         public static final class Inverted {
